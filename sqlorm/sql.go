@@ -37,8 +37,8 @@ type SqlInfo struct {
 	UpperTableName      string              // 大写的表名
 	AllFieldList        []string            // 所有字段列表,如: id,name
 	AllFieldStr         string              // 所有字段列表,如: id,name
-	InsertFieldList     []string               // 插入字段列表,如:id,name
-	InsertFieldStr      string           // 插入字段列表,如:id,name
+	InsertFieldList     []string            // 插入字段列表,如:id,name
+	InsertFieldStr      string              // 插入字段列表,如:id,name
 	InsertMark          string              // 插入字段使用多少个?,如: ?,?,?
 	UpdateFieldList     string              // 更新字段列表
 	SecondField         string              // 存放第二个字段
@@ -46,8 +46,8 @@ type SqlInfo struct {
 	FieldsInfo          []*SqlFieldInfo     // 字段信息
 	NullFieldsInfo      []*NullSqlFieldInfo // 判断为空时
 	InsertInfo          []*SqlFieldInfo
-	OriginTableName string // 真正的表名
-	DBName string // 数据库名
+	OriginTableName     string // 真正的表名
+	DBName              string // 数据库名
 }
 
 // 查询使用的字段结构信息
@@ -67,6 +67,10 @@ type TableNameAndComment struct {
 	Index   int
 	Name    string
 	Comment string
+}
+
+type ShieldStruct struct {
+	Name string
 }
 
 func NewSqlGenerator(typeSpec *ast.TypeSpec) (*SqlGenerator, error) {
@@ -125,9 +129,9 @@ func (ms *SqlGenerator) AddFuncStr() (string, error) {
 		PkgEntity:       ".",
 		PkgTable:        ".",
 		AllFieldList:    allFields,
-		AllFieldStr:strings.Join(allFields, ","),
+		AllFieldStr:     strings.Join(allFields, ","),
 		InsertFieldList: columnList,
-		InsertFieldStr: strings.Join(columnList, ","),
+		InsertFieldStr:  strings.Join(columnList, ","),
 		InsertMark:      strings.TrimRight(InsertMark, ","),
 		//UpdateFieldList:     strings.Join(updateList, ","),
 		//UpdateListField:     updateListField,
@@ -135,8 +139,8 @@ func (ms *SqlGenerator) AddFuncStr() (string, error) {
 		NullFieldsInfo: nullFieldList,
 		InsertInfo:     InsertInfo,
 		//SecondField:         AddQuote(secondField),
-		OriginTableName:"xxx",// 真正的表名
-		DBName:"comic",//数据库名
+		OriginTableName: "xxx",   // 真正的表名
+		DBName:          "comic", //数据库名
 	}
 
 	// 解析模板
@@ -157,6 +161,50 @@ func (ms *SqlGenerator) AddFuncStr() (string, error) {
 	return content.String(), nil
 }
 
+func (ms *SqlGenerator) AddShieldStructStr(originDBName, originTableName string) (string, error) {
+
+	var (
+		shieldStructs = []ShieldStruct{}
+		resstr        = ""
+	)
+
+	fields := ms.getStructFieds(ms.modelType)
+	for _, field := range fields {
+		ss := ShieldStruct{}
+		switch t := field.Type.(type) {
+		case *ast.Ident:
+			if t.Obj != nil && t.Obj.Kind == ast.Typ {
+				if typeSpec, ok := t.Obj.Decl.(*ast.TypeSpec); ok {
+					ss.Name = typeSpec.Name.Name
+					shieldStructs = append(shieldStructs, ShieldStruct{Name: typeSpec.Name.Name})
+				}
+			}
+		default:
+			continue
+		}
+		if ss.Name == "" {
+			continue
+		}
+		// 解析模板
+		tplByte, err := bindata.Asset("assets/tpl/curd-struct.tpl")
+		if err != nil {
+			return "", err
+		}
+		tpl, err := template.New("CURD-STRUCT").Parse(string(tplByte))
+		if err != nil {
+			return "", err
+		}
+		// 解析
+		content := bytes.NewBuffer([]byte{})
+		err = tpl.Execute(content, ss)
+		if err != nil {
+			return "", err
+		}
+		resstr += content.String()
+	}
+
+	return resstr, nil
+}
 
 func (ms *SqlGenerator) AddCurdFuncStr(originDBName, originTableName string) (string, error) {
 
@@ -170,7 +218,8 @@ func (ms *SqlGenerator) AddCurdFuncStr(originDBName, originTableName string) (st
 		nullFieldList = make([]*NullSqlFieldInfo, 0)
 	)
 
-	for _, field := range ms.getStructFieds(ms.modelType) {
+	fields := ms.getStructFieds(ms.modelType)
+	for _, field := range fields {
 		columnName := getColumnName(field)
 
 		nullFieldList = append(nullFieldList, &NullSqlFieldInfo{
@@ -201,9 +250,9 @@ func (ms *SqlGenerator) AddCurdFuncStr(originDBName, originTableName string) (st
 		StructTableName: ms.structName,
 		PkgEntity:       ".",
 		PkgTable:        ".",
-		AllFieldStr:strings.Join(allFields, ","),
+		AllFieldStr:     strings.Join(allFields, ","),
 		AllFieldList:    allFields,
-		InsertFieldStr: strings.Join(columnList, ","),
+		InsertFieldStr:  strings.Join(columnList, ","),
 		InsertFieldList: columnList,
 		InsertMark:      strings.TrimRight(InsertMark, ","),
 		//UpdateFieldList:     strings.Join(updateList, ","),
@@ -212,8 +261,8 @@ func (ms *SqlGenerator) AddCurdFuncStr(originDBName, originTableName string) (st
 		NullFieldsInfo: nullFieldList,
 		InsertInfo:     InsertInfo,
 		//SecondField:         AddQuote(secondField),
-		OriginTableName:originTableName,// 真正的表名
-		DBName:originDBName,//数据库名
+		OriginTableName: originTableName, // 真正的表名
+		DBName:          originDBName,    //数据库名
 	}
 
 	// 解析模板
@@ -233,7 +282,6 @@ func (ms *SqlGenerator) AddCurdFuncStr(originDBName, originTableName string) (st
 	}
 	return content.String(), nil
 }
-
 
 func (ms *SqlGenerator) AddCacheFuncStr() (string, error) {
 
@@ -279,9 +327,9 @@ func (ms *SqlGenerator) AddCacheFuncStr() (string, error) {
 		PkgEntity:       ".",
 		PkgTable:        ".",
 		AllFieldList:    allFields,
-		AllFieldStr:strings.Join(allFields, ","),
+		AllFieldStr:     strings.Join(allFields, ","),
 		InsertFieldList: columnList,
-		InsertFieldStr: strings.Join(columnList, ","),
+		InsertFieldStr:  strings.Join(columnList, ","),
 		InsertMark:      strings.TrimRight(InsertMark, ","),
 		//UpdateFieldList:     strings.Join(updateList, ","),
 		//UpdateListField:     updateListField,
@@ -289,8 +337,8 @@ func (ms *SqlGenerator) AddCacheFuncStr() (string, error) {
 		NullFieldsInfo: nullFieldList,
 		InsertInfo:     InsertInfo,
 		//SecondField:         AddQuote(secondField),
-		OriginTableName:"xxx",// 真正的表名
-		DBName:"comic",//数据库名
+		OriginTableName: "xxx",   // 真正的表名
+		DBName:          "comic", //数据库名
 	}
 
 	// 解析模板
@@ -403,14 +451,13 @@ func structSelection(node ast.Node) (int, int, error) {
 
 	fset := token.NewFileSet()
 
-
 	start := fset.Position(encStruct.Pos()).Line
 	end := fset.Position(encStruct.End()).Line
 
 	return start, end, nil
 }
 
-func StructFileLine(node ast.Node) (string, error){
+func StructFileLine(node ast.Node) (string, error) {
 	var buf bytes.Buffer
 	fset := token.NewFileSet()
 	err := format.Node(&buf, fset, node)
@@ -420,8 +467,6 @@ func StructFileLine(node ast.Node) (string, error){
 
 	return buf.String(), nil
 }
-
-
 
 func (ms *SqlGenerator) getStructFieds(node ast.Node) []*ast.Field {
 	var fields []*ast.Field
@@ -440,8 +485,6 @@ func (ms *SqlGenerator) getStructFieds(node ast.Node) []*ast.Field {
 	//
 	//log.Info("", start, end, err)
 
-
-
 	for _, field := range nodeType.Fields.List {
 		if util.GetFieldTag(field, "sql").Name == "-" {
 			continue
@@ -451,6 +494,11 @@ func (ms *SqlGenerator) getStructFieds(node ast.Node) []*ast.Field {
 		case *ast.Ident:
 			if t.Obj != nil && t.Obj.Kind == ast.Typ {
 				if typeSpec, ok := t.Obj.Decl.(*ast.TypeSpec); ok {
+					if field.Names[0].Name != ms.tableName() {
+						log.Info("find filed is struct name:%+v, type:%+v", field.Names[0].Name, field.Type)
+						fields = append(fields, field)
+						continue
+					}
 					fields = append(fields, ms.getStructFieds(typeSpec.Type)...)
 				}
 			} else {
@@ -548,12 +596,11 @@ func isPrimaryKey(field *ast.Field) bool {
 }
 
 func isTimeKey(field *ast.Field) bool {
-	if len(field.Names) > 0 && (strings.ToUpper(field.Names[0].Name) == "CTIME"  || strings.ToUpper(field.Names[0].Name) == "MTIME"){
+	if len(field.Names) > 0 && (strings.ToUpper(field.Names[0].Name) == "CTIME" || strings.ToUpper(field.Names[0].Name) == "MTIME") {
 		return true
 	}
 	return false
 }
-
 
 func mysqlTag(field *ast.Field, size int, autoIncrease bool) (string, error) {
 	typeName := ""

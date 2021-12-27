@@ -2,6 +2,7 @@ package sqlorm
 
 import (
 	"errors"
+	"fmt"
 	"go/ast"
 	"go/build"
 	"go/parser"
@@ -210,7 +211,7 @@ func CacheCommandAction(c *cli.Context) error {
 		types = program.FindMatchStruct([]*ast.File{f}, matchFunc)
 	} else {
 		absPath, err := gencode.AbsPath(file)
-		log.Info("abspath %s",  absPath)
+		log.Info("abspath %s", absPath)
 		if err != nil {
 			log.Warning("get [path:%s] absPath failed:%v", file, err)
 			return err
@@ -259,9 +260,9 @@ func CacheCommandAction(c *cli.Context) error {
 		//log.Info(str)
 
 		dotIndex := strings.LastIndex(file, ".")
-		cacheFile := file[:dotIndex]+"_mc.go"
+		cacheFile := file[:dotIndex] + "_mc.go"
 
-		_,err = os.Stat(cacheFile)
+		_, err = os.Stat(cacheFile)
 		if err == nil {
 			return errors.New("cache file is already create")
 		}
@@ -331,7 +332,7 @@ func CurdCommandAction(c *cli.Context) error {
 
 	} else {
 		absPath, err := gencode.AbsPath(file)
-		log.Info("abspath %s",  absPath)
+		log.Info("abspath %s", absPath)
 		if err != nil {
 			log.Warning("get [path:%s] absPath failed:%v", file, err)
 			return err
@@ -362,7 +363,11 @@ func CurdCommandAction(c *cli.Context) error {
 	//writefile.AddImportModule("context", file)
 
 	for _, typ := range types {
-		//log.Info("types %+v", typ)
+		log.Info("types %+v", typ)
+		if typ.Name.Name != pattern {
+			panic(typ)
+		}
+		fmt.Println("========", typ.Name.Name, pattern)
 		ms, err := NewSqlGenerator(typ)
 		//log.Info("NewSqlGenerator types %+v", *ms)
 		if err != nil {
@@ -370,13 +375,18 @@ func CurdCommandAction(c *cli.Context) error {
 			return err
 		}
 
-		str, err := ms.AddCurdFuncStr(db,table)
-
+		str, err := ms.AddCurdFuncStr(db, table)
 		if err != nil {
 			log.Warning("create curd string failed:%v", err)
 			return err
 		}
 
+		shieldStructStr, err := ms.AddShieldStructStr(db, table)
+		if err != nil {
+			log.Warning("create curd string failed:%v", err)
+			return err
+		}
+		str += shieldStructStr
 		//log.Info(str)
 
 		err = writefile.WriteAppendFile(file, "\n\n\n"+str)
