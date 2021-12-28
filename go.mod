@@ -1,4 +1,4 @@
-module github.com/janfly79/s2curd
+module s2curd
 
 go 1.14
 

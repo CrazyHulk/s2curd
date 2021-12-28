@@ -2,7 +2,12 @@ package main
 
 import (
 	"context"
+	"database/sql/driver"
+	"encoding/json"
 	"time"
+
+	"git.bilibili.co/go/util/db"
+	"github.com/pkg/errors"
 )
 
 // Order 支付订单
@@ -61,4 +66,201 @@ type ExtInfo struct {
 	RefuelAmount   int32     `json:"refuel_amount,omitempty"`    // 加油包数量
 	RefuelSilverID int32     `json:"refuel_silver_id,omitempty"` // 加油包附加的通用券 id
 	RefuelCardID   int32     `json:"refuel_card_id,omitempty"`   // 加油包附加的
+}
+
+func (s *ExtInfo) Scan(src interface{}) (err error) {
+	*s = ExtInfo{}
+	if src == nil {
+		return
+	}
+	switch srcData := src.(type) {
+	case string:
+		err = json.Unmarshal([]byte(srcData), &s)
+		return
+	case []byte:
+		err = json.Unmarshal(srcData, &s)
+		return
+	default:
+		err = errors.Errorf("[i18n.String] unknown scan source: %+v", src)
+	}
+	return
+}
+
+// Value 实现 driver.Valuer 接口
+func (s ExtInfo) Value() (v driver.Value, err error) {
+	return json.Marshal(s)
+}
+
+func (item *Order) Scan(row db.Row) (err error) {
+	err = row.Scan(
+		&item.ID,
+		&item.RootOrderID,
+		&item.UID,
+		&item.PayType,
+		&item.PayAmount,
+		&item.PayMsgContent,
+		&item.OriginalAmount,
+		&item.Platform,
+		&item.ProductID,
+		&item.ProductAmount,
+		&item.PayStatus,
+		&item.PayTime,
+		&item.CreateTime,
+		&item.MTime,
+		&item.ExpireTime,
+		&item.ExtInfo,
+		&item.TxID,
+		&item.PayDeviceType,
+		&item.PayChannel,
+		&item.version,
+	)
+
+	return
+}
+
+// 添加
+func addOrder(ctx context.Context, item Order) (lastId int64, err error) {
+	conn := db.Get(ctx, "userx")
+	sql := "insert into t_card_order (" +
+		"`root_order_id`," +
+		"`uid`," +
+		"`pay_type`," +
+		"`pay_amount`," +
+		"`pay_msg_content`," +
+		"`original_amount`," +
+		"`platform`," +
+		"`product_id`," +
+		"`product_amount`," +
+		"`pay_status`," +
+		"`pay_time`," +
+		"`create_time`," +
+		"`expire_time`," +
+		"`ext_info`," +
+		"`tx_id`," +
+		"`pay_device_type`," +
+		"`pay_channel`," +
+		"`version`" +
+		") values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+	q := db.SQLInsert("t_card_order", sql)
+
+	res, err := conn.ExecContext(ctx, q,
+		item.RootOrderID,
+		item.UID,
+		item.PayType,
+		item.PayAmount,
+		item.PayMsgContent,
+		item.OriginalAmount,
+		item.Platform,
+		item.ProductID,
+		item.ProductAmount,
+		item.PayStatus,
+		item.PayTime,
+		item.CreateTime,
+		item.ExpireTime,
+		item.ExtInfo,
+		item.TxID,
+		item.PayDeviceType,
+		item.PayChannel,
+		item.version,
+	)
+	if err != nil {
+		return
+	}
+
+	lastId, err = res.LastInsertId()
+
+	return
+}
+
+func delOrder(ctx context.Context, id interface{}) (err error) {
+	conn := db.Get(ctx, "userx")
+	sql := "delete from t_card_order where id = ?"
+	q := db.SQLDelete("t_card_order", sql)
+
+	_, err = conn.ExecContext(ctx, q, id)
+
+	return
+}
+
+func updateOrder(ctx context.Context, where string, args []interface{}) (err error) {
+	conn := db.Get(ctx, "userx")
+	sql := "update t_card_order set " +
+		"`root_order_id`=?," +
+		"`uid`=?," +
+		"`pay_type`=?," +
+		"`pay_amount`=?," +
+		"`pay_msg_content`=?," +
+		"`original_amount`=?," +
+		"`platform`=?," +
+		"`product_id`=?," +
+		"`product_amount`=?," +
+		"`pay_status`=?," +
+		"`pay_time`=?," +
+		"`create_time`=?," +
+		"`expire_time`=?," +
+		"`ext_info`=?," +
+		"`tx_id`=?," +
+		"`pay_device_type`=?," +
+		"`pay_channel`=?," +
+		"`version`=? " + where
+	q := db.SQLUpdate("t_card_order", sql)
+
+	_, err = conn.ExecContext(ctx, q, args...)
+
+	return
+}
+
+func listOrder(ctx context.Context, where string, args []interface{}) (rowsResult []Order, err error) {
+	conn := db.Get(ctx, "userx")
+	sql := "select " +
+		"`id`," +
+		"`root_order_id`," +
+		"`uid`," +
+		"`pay_type`," +
+		"`pay_amount`," +
+		"`pay_msg_content`," +
+		"`original_amount`," +
+		"`platform`," +
+		"`product_id`," +
+		"`product_amount`," +
+		"`pay_status`," +
+		"`pay_time`," +
+		"`create_time`," +
+		"`m_time`," +
+		"`expire_time`," +
+		"`ext_info`," +
+		"`tx_id`," +
+		"`pay_device_type`," +
+		"`pay_channel`," +
+		"`version` " +
+		"from t_card_order " + where
+	q := db.SQLSelect("t_card_order", sql)
+
+	rows, err := conn.QueryContext(ctx, q, args...)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		row := Order{}
+		if err = row.Scan(rows); err != nil {
+			return
+		}
+		rowsResult = append(rowsResult, row)
+	}
+
+	err = rows.Err()
+
+	return
+}
+
+func countOrder(ctx context.Context, where string, args []interface{}) (total int32, err error) {
+	conn := db.Get(ctx, "userx")
+	sql := "select count(*) from t_card_order " + where
+	q := db.SQLSelect("t_card_order", sql)
+
+	err = conn.QueryRowContext(ctx, q, args...).Scan(&total)
+
+	return
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/janfly79/s2curd/sqlorm"
+	"s2curd/sqlorm"
 
 	log "github.com/liudanking/goutil/logutil"
 

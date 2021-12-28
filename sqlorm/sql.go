@@ -11,11 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/janfly79/s2curd/util"
-
-	"github.com/janfly79/s2curd/bindata"
-
 	"github.com/pinzolo/casee"
+	"s2curd/bindata"
+	"s2curd/util"
 
 	log "github.com/liudanking/goutil/logutil"
 )

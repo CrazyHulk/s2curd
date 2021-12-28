@@ -12,10 +12,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/janfly79/s2curd/gencode"
-	"github.com/janfly79/s2curd/program"
+	"s2curd/gencode"
+	"s2curd/program"
 
-	"github.com/janfly79/s2curd/util/writefile"
+	"s2curd/util/writefile"
 
 	log "github.com/liudanking/goutil/logutil"
 	"github.com/urfave/cli"
@@ -386,7 +386,7 @@ func CurdCommandAction(c *cli.Context) error {
 			log.Warning("create curd string failed:%v", err)
 			return err
 		}
-		str += shieldStructStr
+		str = shieldStructStr + str
 		//log.Info(str)
 
 		err = writefile.WriteAppendFile(file, "\n\n\n"+str)
