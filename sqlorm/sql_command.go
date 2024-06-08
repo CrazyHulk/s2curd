@@ -12,10 +12,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"s2curd/gencode"
-	"s2curd/program"
-
-	"s2curd/util/writefile"
+	"github.com/crazyhulk/s2curd/gencode"
+	"github.com/crazyhulk/s2curd/program"
+	"github.com/crazyhulk/s2curd/util/writefile"
 
 	log "github.com/liudanking/goutil/logutil"
 	"github.com/urfave/cli"

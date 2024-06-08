@@ -31,7 +31,7 @@ type Tools struct {
 	l sync.Mutex
 }
 
-//检查某字符是否存在文件里
+// 检查某字符是否存在文件里
 func (t *Tools) CheckFileContainsChar(filename, s string) bool {
 	data := t.ReadFile(filename)
 	if len(data) > 0 {
@@ -40,7 +40,7 @@ func (t *Tools) CheckFileContainsChar(filename, s string) bool {
 	return false
 }
 
-//读取文件内容
+// 读取文件内容
 func (t *Tools) ReadFile(filename string) string {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -49,7 +49,7 @@ func (t *Tools) ReadFile(filename string) string {
 	return string(data)
 }
 
-//写文件
+// 写文件
 func (t *Tools) WriteFile(filename string, data string) (count int, err error) {
 	var f *os.File
 	if t.IsDirOrFileExist(filename) == false {
@@ -68,7 +68,7 @@ func (t *Tools) WriteFile(filename string, data string) (count int, err error) {
 	return
 }
 
-//追加写文件
+// 追加写文件
 func (t *Tools) WriteFileAppend(filename string, data string) (count int, err error) {
 	var f *os.File
 	if t.IsDirOrFileExist(filename) == false {
@@ -87,7 +87,7 @@ func (t *Tools) WriteFileAppend(filename string, data string) (count int, err er
 	return
 }
 
-//创建文件
+// 创建文件
 func (t *Tools) CreateFile(path string) bool {
 	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
 	defer file.Close()
@@ -97,7 +97,7 @@ func (t *Tools) CreateFile(path string) bool {
 	return true
 }
 
-//创建目录
+// 创建目录
 func (t *Tools) CreateDir(path string) bool {
 	if t.IsDirOrFileExist(path) == false {
 		err := os.MkdirAll(path, os.ModePerm)
@@ -108,7 +108,7 @@ func (t *Tools) CreateDir(path string) bool {
 	return true
 }
 
-//生成目录,不存在则创建,存在则加/
+// 生成目录,不存在则创建,存在则加/
 func (t *Tools) GenerateDir(path string) (string, error) {
 	if len(path) == 0 {
 		return "", errors.New("directory is null")
@@ -126,7 +126,7 @@ func (t *Tools) GenerateDir(path string) (string, error) {
 	return path, nil
 }
 
-//判断文件 或 目录是否存在
+// 判断文件 或 目录是否存在
 func (t *Tools) IsDirOrFileExist(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil || os.IsExist(err)
@@ -157,7 +157,7 @@ func (t *Tools) isFileOrDir(filename string, decideDir bool) bool {
 	return !isDir
 }
 
-//将字符串转换成驼峰格式
+// 将字符串转换成驼峰格式
 // Capitalize 字符首字母大写
 func (t *Tools) Capitalize(s string) string {
 	var upperStr string
@@ -178,12 +178,12 @@ func (t *Tools) Capitalize(s string) string {
 	return upperStr
 }
 
-//将分隔_拆掉,全大写
+// 将分隔_拆掉,全大写
 func (t *Tools) ToUpper(s string) string {
 	return strings.ToUpper(s)
 }
 
-//转json
+// 转json
 func (t *Tools) ToJson(s interface{}) string {
 	js, err := json.Marshal(s)
 	if err != nil {
@@ -192,7 +192,7 @@ func (t *Tools) ToJson(s interface{}) string {
 	return string(js)
 }
 
-//创建目录
+// 创建目录
 func CreateDir(path string) string {
 	t := new(Tools)
 	if t.IsDirOrFileExist(path) == false {
@@ -206,7 +206,7 @@ func CreateDir(path string) string {
 	return path
 }
 
-//写文件
+// 写文件
 func WriteFile(path, data string) (err error) {
 	if _, err := new(Tools).WriteFile(path, data); err == nil {
 		fmt.Printf("Ganerate success: %s\n", path)
@@ -216,7 +216,7 @@ func WriteFile(path, data string) (err error) {
 	}
 }
 
-//追加写文件
+// 追加写文件
 func WriteAppendFile(path, data string) (err error) {
 	if _, err := new(Tools).WriteFileAppend(path, data); err == nil {
 		fmt.Printf("Generate success:%s\n", path)
@@ -226,7 +226,7 @@ func WriteAppendFile(path, data string) (err error) {
 	}
 }
 
-//GetRootDir 获取执行路径
+// GetRootDir 获取执行路径
 func GetExeRootDir() string {
 	// 文件不存在获取执行路径
 	file, err := filepath.Abs(filepath.Dir(os.Args[0]))
@@ -238,7 +238,7 @@ func GetExeRootDir() string {
 	return file
 }
 
-//获取根目录
+// 获取根目录
 func GetRootPath(path string) string {
 	if path[len(path)-1:] == string(os.PathSeparator) {
 		path = path[:len(path)-1]
@@ -246,7 +246,7 @@ func GetRootPath(path string) string {
 	return SubStr(path, 0, strings.LastIndex(path, string(os.PathSeparator)))
 }
 
-//截取字符串
+// 截取字符串
 func SubStr(s string, pos, length int) string {
 	runes := []rune(s)
 	l := pos + length
@@ -263,7 +263,7 @@ func ErrMsg(msg string, err error) interface{} {
 	return m
 }
 
-//FMT 格式代码
+// FMT 格式代码
 func Gofmt(path string) bool {
 	if new(Tools).IsDirOrFileExist(path) {
 		if !ExecCommand("goimports", "-l", "-w", path) {
@@ -276,7 +276,7 @@ func Gofmt(path string) bool {
 	return false
 }
 
-//清屏
+// 清屏
 func Clean() {
 	switch GetOs() {
 	case Darwin, Linux:
@@ -290,7 +290,7 @@ func Clean() {
 	}
 }
 
-//获取操作系统
+// 获取操作系统
 func GetOs() int {
 	switch runtime.GOOS {
 	case "darwin":
@@ -313,7 +313,7 @@ func ExecCommand(name string, args ...string) bool {
 	return true
 }
 
-//拼接特殊字符串
+// 拼接特殊字符串
 func FormatField(field string, formats []string) string {
 	if len(formats) == 0 {
 		return ""
@@ -325,7 +325,7 @@ func FormatField(field string, formats []string) string {
 	return "`" + strings.TrimRight(buf.String(), " ") + "`"
 }
 
-//添加注释 //
+// 添加注释 //
 func AddToComment(s string, suff string) string {
 	if strings.EqualFold(s, "") {
 		return ""
@@ -333,7 +333,7 @@ func AddToComment(s string, suff string) string {
 	return "// " + s + suff
 }
 
-//判断是否包存在某字符
+// 判断是否包存在某字符
 func InArrayString(str string, arr []string) bool {
 	for _, val := range arr {
 		if val == str {
@@ -343,7 +343,7 @@ func InArrayString(str string, arr []string) bool {
 	return false
 }
 
-//检查字符串,去掉特殊字符
+// 检查字符串,去掉特殊字符
 func CheckCharDoSpecial(s string, char byte, regs string) string {
 	reg := regexp.MustCompile(regs)
 	var result []string
@@ -370,7 +370,7 @@ func CheckCharDoSpecialArr(s string, char byte, reg string) []string {
 	return strings.Split(s, string(char))
 }
 
-// 添加``符号
+// 添加“符号
 func AddQuote(str string) string {
 	return "`" + str + "`"
 }
@@ -379,8 +379,6 @@ func AddQuote(str string) string {
 func CleanQuote(str string) string {
 	return strings.Replace(str, "`", "", -1)
 }
-
-
 
 func AddImportModule(moduleName string, file string) (err error) {
 	fi, err := os.OpenFile(file, os.O_RDWR, os.ModePerm)
@@ -396,7 +394,7 @@ func AddImportModule(moduleName string, file string) (err error) {
 		}
 		lines = append(lines, string(bs))
 		if strings.Contains(string(bs), "import") {
-			lines = append(lines, "\"" + moduleName + "\"")
+			lines = append(lines, "\""+moduleName+"\"")
 		}
 	}
 	fi.Close()
@@ -421,7 +419,7 @@ func writeLines(lines []string, path string) error {
 	return w.Flush()
 }
 
-func RenameFile(originPath, afterPath string ) (err error){
+func RenameFile(originPath, afterPath string) (err error) {
 	err = os.Rename(originPath, afterPath)
 	if err != nil {
 		fmt.Printf("rename file filed,err:%v", err)
@@ -429,4 +427,3 @@ func RenameFile(originPath, afterPath string ) (err error){
 	}
 	return
 }
-
